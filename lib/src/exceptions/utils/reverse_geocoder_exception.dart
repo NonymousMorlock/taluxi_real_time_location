@@ -1,4 +1,4 @@
-import '../base_exception.dart';
+import 'package:real_time_location/src/exceptions/base_exception.dart';
 
 class ReverseGeocoderException
     extends BaseException<ReverseGeocoderExceptionType> {

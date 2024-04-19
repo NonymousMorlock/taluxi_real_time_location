@@ -1,12 +1,11 @@
-import 'package:flutter/cupertino.dart';
-import 'base_exception.dart';
+import 'package:real_time_location/src/exceptions/base_exception.dart';
 
 class RealTimeLocationException
     extends BaseException<RealTimeLocationExceptionType> {
-  const RealTimeLocationException(
-      {@required String message,
-      @required RealTimeLocationExceptionType exceptionType})
-      : super(exceptionType: exceptionType, message: message);
+  const RealTimeLocationException({
+    required super.message,
+    required super.exceptionType,
+  });
 
   const RealTimeLocationException.realTimeLocationUninitialized()
       : super(
@@ -33,8 +32,8 @@ class RealTimeLocationException
           message: 'Initialization Failed',
           exceptionType: RealTimeLocationExceptionType.initializationFailed,
         );
-  // @override
-  // String toString() => 'RealTimeLocationException :\n' + message;
+// @override
+// String toString() => 'RealTimeLocationException :\n' + message;
 }
 
 enum RealTimeLocationExceptionType {

@@ -16,16 +16,16 @@ class MockLocationRepository extends Mock implements LocationRepository {
   MockLocationRepository();
 }
 
-// TODO integration testing.
+// TODOintegration testing.
 void main() {
-  RealTimeLocation realTimeLocation;
-  LocationStreamer locationStreamer;
-  DeviceLocationHandler deviceLocationHandler;
-  LocationRepository locationRepository;
+  late RealTimeLocation realTimeLocation;
+  late LocationStreamer locationStreamer;
+  late DeviceLocationHandler deviceLocationHandler;
+  late LocationRepository locationRepository;
   final reverseGeocoder = MockReverseGeocoder();
   const fakeUserId = 'id';
   const fakeCity = 'ccity';
-  final fakeUserLocation =
+  const fakeUserLocation =
       Coordinates(latitude: 14.356464, longitude: -12.376404);
 
   setUp(() async {
@@ -33,9 +33,10 @@ void main() {
     locationStreamer = MockLocationStreamer();
     deviceLocationHandler = MockDeviceLocationHandler();
     realTimeLocation = RealTimeLocationImpl.forTest(
-        locationRepository: locationRepository,
-        locationStreamer: locationStreamer,
-        deviceLocationHandler: deviceLocationHandler);
+      locationRepository: locationRepository,
+      locationStreamer: locationStreamer,
+      deviceLocationHandler: deviceLocationHandler,
+    );
     when(reverseGeocoder.getCityFromCoordinates(fakeUserLocation))
         .thenAnswer((_) => Future.value(fakeCity));
     when(deviceLocationHandler.getCurrentCoordinates())
@@ -45,12 +46,14 @@ void main() {
   test('Should initialize RealTimeLocation', () async {
     expect(realTimeLocation.initialized, isFalse);
     await realTimeLocation.initialize(
-        reverseGeocoder: reverseGeocoder, currentUserId: fakeUserId);
+      reverseGeocoder: reverseGeocoder,
+      currentUserId: fakeUserId,
+    );
     expect(realTimeLocation.initialized, isTrue);
     verifyInOrder([
       deviceLocationHandler.initialize(requireBackground: true),
       deviceLocationHandler.getCurrentCoordinates(),
-      reverseGeocoder.getCityFromCoordinates(fakeUserLocation)
+      reverseGeocoder.getCityFromCoordinates(fakeUserLocation),
     ]);
   });
 
@@ -64,9 +67,12 @@ void main() {
 
     test('Should tack the location of the user which id given as parameter',
         () async {
-      when(locationStreamer.getLocationStream(
-              city: fakeCity, userUid: fakeUserId))
-          .thenAnswer((_) => Stream.value(fakeUserLocation.toMap()));
+      when(
+        locationStreamer.getLocationStream(
+          city: fakeCity,
+          userUid: fakeUserId,
+        ),
+      ).thenAnswer((_) => Stream.value(fakeUserLocation.toMap()));
       expect(
         await realTimeLocation.startLocationTracking(fakeUserId).first,
         equals(fakeUserLocation),
@@ -75,34 +81,37 @@ void main() {
 
     test('Should share current user location and update location stream',
         () async {
-      when(deviceLocationHandler.getCoordinatesStream(
-              distanceFilterInMeter: 100))
-          .thenAnswer((_) => Stream.value(fakeUserLocation));
+      when(
+        deviceLocationHandler.getCoordinatesStream(),
+      ).thenAnswer((_) => Stream.value(fakeUserLocation));
       await realTimeLocation.enableRideMode();
       realTimeLocation.startSharingLocation(distanceFilterInMeter: 100);
-      await Future.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
       verifyInOrder([
-        deviceLocationHandler.getCoordinatesStream(distanceFilterInMeter: 100),
+        deviceLocationHandler.getCoordinatesStream(),
         locationStreamer.updateLocation(
           city: fakeCity,
           userUid: fakeUserId,
           gpsCoordinates: fakeUserLocation.toMap(),
-        )
+        ),
       ]);
     });
 
     test(
         'Should share current user location and put location to location repository',
         () async {
-      when(deviceLocationHandler.getCoordinatesStream(
-              distanceFilterInMeter: 100))
-          .thenAnswer((_) => Stream.value(fakeUserLocation));
+      when(
+        deviceLocationHandler.getCoordinatesStream(),
+      ).thenAnswer((_) => Stream.value(fakeUserLocation));
       realTimeLocation.startSharingLocation(distanceFilterInMeter: 100);
-      await Future.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
       verifyInOrder([
-        deviceLocationHandler.getCoordinatesStream(distanceFilterInMeter: 100),
+        deviceLocationHandler.getCoordinatesStream(),
         locationRepository.putLocation(
-            city: fakeCity, userId: fakeUserId, coordinates: fakeUserLocation)
+          city: fakeCity,
+          userId: fakeUserId,
+          coordinates: fakeUserLocation,
+        ),
       ]);
     });
 
@@ -111,7 +120,7 @@ void main() {
       expect(realTimeLocation.isRideMode, isTrue);
       verifyInOrder([
         locationRepository.deleteLocation(city: fakeCity, userId: fakeUserId),
-        deviceLocationHandler.setDistanceFilter(100)
+        deviceLocationHandler.setDistanceFilter(100),
       ]);
     });
 
@@ -125,7 +134,9 @@ void main() {
 
     test('Should get the closest drivers location', () async {
       await realTimeLocation.getClosestDriversLocations(
-          locationCount: 5, maxDistanceInKm: 3);
+        locationCount: 5,
+        maxDistanceInKm: 3,
+      );
       verifyInOrder([
         deviceLocationHandler.getCurrentCoordinates(),
         locationRepository.getClosestLocation(
@@ -133,7 +144,7 @@ void main() {
           coordinates: fakeUserLocation,
           maxDistanceInKm: 3,
           locationCount: 5,
-        )
+        ),
       ]);
     });
   });

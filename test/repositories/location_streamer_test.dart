@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:real_time_location/src/repositories/location_streamer.dart';
 
 void main() {
-  DatabaseReference databaseReference;
-  LocationStreamer locationStreamer;
+  late DatabaseReference databaseReference;
+  late LocationStreamer locationStreamer;
   const userUid = 'testUid';
   const otherUserUid = 'testNewUid';
 
@@ -26,45 +26,48 @@ void main() {
         .set({
       userUid: '${coordinates['latitude']}-${coordinates['longitude']}',
       otherUserUid:
-          '${otherCoordinates['latitude']}-${otherCoordinates['longitude']}'
+          '${otherCoordinates['latitude']}-${otherCoordinates['longitude']}',
     });
 
     test(
         'Should return the coordinates of user which uid is passed in parameter',
         () async {
-      final _coordinates =
+      final coordinates0 =
           await locationStreamer.getLocation(userUid: userUid, city: city);
-      expect(_coordinates, equals(coordinates));
-      final _othercoordinates =
+      expect(coordinates0, equals(coordinates));
+      final othercoordinates =
           await locationStreamer.getLocation(userUid: otherUserUid, city: city);
-      expect(_othercoordinates, equals(otherCoordinates));
+      expect(othercoordinates, equals(otherCoordinates));
     });
     test(
         'Should returns null when nonexistent user uid is passed in parameter.',
         () async {
-      final _othercoordinates =
+      final othercoordinates =
           await locationStreamer.getLocation(userUid: 'fakeUid', city: city);
-      expect(_othercoordinates, isNull);
+      expect(othercoordinates, isNull);
     });
 
     test(
         'Should return a stream of coordinates of user whose uid is passed in parameter',
         () async {
-      final _coordinatesStream =
+      final coordinatesStream =
           locationStreamer.getLocationStream(userUid: userUid, city: city);
-      expect(_coordinatesStream, isA<Stream<Map<String, double>>>());
-      expect(await _coordinatesStream.first, equals(coordinates));
+      expect(coordinatesStream, isA<Stream<Map<String, double>>>());
+      expect(await coordinatesStream.first, equals(coordinates));
     });
     // TODO: test write operations on taxi drivers information
     test('Should update the driver location', () async {
-      var _coordinates =
+      var coordinates0 =
           await locationStreamer.getLocation(userUid: userUid, city: city);
-      expect(_coordinates, equals(coordinates));
+      expect(coordinates0, equals(coordinates));
       await locationStreamer.updateLocation(
-          city: city, gpsCoordinates: otherCoordinates, userUid: userUid);
-      _coordinates =
+        city: city,
+        gpsCoordinates: otherCoordinates,
+        userUid: userUid,
+      );
+      coordinates0 =
           await locationStreamer.getLocation(userUid: userUid, city: city);
-      expect(_coordinates, equals(otherCoordinates));
+      expect(coordinates0, equals(otherCoordinates));
     });
   });
 }

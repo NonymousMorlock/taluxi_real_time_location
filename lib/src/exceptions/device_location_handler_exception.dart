@@ -1,47 +1,44 @@
-import 'package:flutter/foundation.dart';
-import 'base_exception.dart';
+import 'package:real_time_location/src/exceptions/base_exception.dart';
 
 class DeviceLocationHandlerException
     extends BaseException<DeviceLocationHandlerExceptionType> {
-  const DeviceLocationHandlerException(
-      {@required String message,
-      @required DeviceLocationHandlerExceptionType exceptionType})
-      : super(
-          exceptionType: exceptionType,
-          message: message,
-        );
+  const DeviceLocationHandlerException({
+    required super.message,
+    required super.exceptionType,
+  });
 
-  DeviceLocationHandlerException.permissionDenied()
+  const DeviceLocationHandlerException.permissionDenied()
       : super(
           message: 'Location access permission denied',
           exceptionType: DeviceLocationHandlerExceptionType.permissionDenied,
         );
 
-  DeviceLocationHandlerException.permissionPermanentlyDenied()
+  const DeviceLocationHandlerException.permissionPermanentlyDenied()
       : super(
-            message: 'Location access permission is permanently denied',
-            exceptionType:
-                DeviceLocationHandlerExceptionType.permissionPermanentlyDenied);
+          message: 'Location access permission is permanently denied',
+          exceptionType:
+              DeviceLocationHandlerExceptionType.permissionPermanentlyDenied,
+        );
 
-  DeviceLocationHandlerException.insufficientPermission()
+  const DeviceLocationHandlerException.insufficientPermission()
       : super(
-          message:
-              'The granted permission is insufficient for the requested service.',
+          message: 'The granted permission is insufficient for the '
+              'requested service.',
           exceptionType:
               DeviceLocationHandlerExceptionType.insufficientPermission,
         );
 
-  DeviceLocationHandlerException.locationServiceDisabled()
+  const DeviceLocationHandlerException.locationServiceDisabled()
       : super(
           message: 'The location service is desabled',
           exceptionType:
               DeviceLocationHandlerExceptionType.locationServiceDisabled,
         );
 
-  DeviceLocationHandlerException.locationServiceUninitialized()
+  const DeviceLocationHandlerException.locationServiceUninitialized()
       : super(
-          message:
-              'The location service is not initialized you must initialize it before using it.',
+          message: 'The location service is not initialized you '
+              'must initialize it before using it.',
           exceptionType:
               DeviceLocationHandlerExceptionType.locationServiceUninitialized,
         );

@@ -3,15 +3,16 @@ import 'package:location/location.dart';
 import 'package:mockito/mockito.dart';
 import 'package:real_time_location/real_time_location.dart';
 import 'package:real_time_location/src/device_location_handler_impl.dart';
-import 'package:real_time_location/src/exceptions/device_location_handler_exception.dart';
 
 class MockLocation extends Mock implements Location {}
 
 void main() {
-  Location location;
-  DeviceLocationHandler deviceLocationHandler;
-  final fakeCoordinates =
-      Coordinates(latitude: -13.045356, longitude: 12.546447);
+  late Location location;
+  late DeviceLocationHandler deviceLocationHandler;
+  const fakeCoordinates = Coordinates(
+    latitude: -13.045356,
+    longitude: 12.546447,
+  );
   final fakeLocationData = LocationData.fromMap({
     'latitude': fakeCoordinates.latitude,
     'longitude': fakeCoordinates.longitude,
@@ -108,7 +109,7 @@ void main() {
           .thenAnswer((_) => Future.value(PermissionStatus.deniedForever));
 
       expect(
-        () async => await deviceLocationHandler.initialize(),
+        () async => deviceLocationHandler.initialize(),
         throwsA(
           isA<DeviceLocationHandlerException>().having(
             (e) => e.exceptionType,
@@ -149,7 +150,7 @@ void main() {
 
     test('Should enable background mode', () async {
       await deviceLocationHandler.initialize(requireBackground: true);
-      verify(location.enableBackgroundMode(enable: true));
+      verify(location.enableBackgroundMode());
     });
   });
 
@@ -159,14 +160,16 @@ void main() {
     );
     await deviceLocationHandler.initialize();
     expect(
-        await deviceLocationHandler.getCurrentCoordinates(), fakeCoordinates);
+      await deviceLocationHandler.getCurrentCoordinates(),
+      fakeCoordinates,
+    );
   });
 
   test(
       'Should throw a [DeviceLocationHandlerException.locationServiceUninitialized()] when trying to get the current coordinates without initializing the device location handler object.',
       () {
     expect(
-      () async => await deviceLocationHandler.getCurrentCoordinates(),
+      () async => deviceLocationHandler.getCurrentCoordinates(),
       throwsA(
         isA<DeviceLocationHandlerException>().having(
           (e) => e.exceptionType,
@@ -191,7 +194,7 @@ void main() {
     when(location.onLocationChanged)
         .thenAnswer((_) => Stream.value(fakeLocationData));
     await deviceLocationHandler.initialize();
-    deviceLocationHandler.getCoordinatesStream(distanceFilterInMeter: 100);
+    deviceLocationHandler.getCoordinatesStream();
     verify(location.changeSettings(distanceFilter: 100));
   });
 

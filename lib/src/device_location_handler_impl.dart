@@ -1,32 +1,31 @@
 import 'package:location/location.dart';
-import '../real_time_location.dart';
-
-import 'exceptions/device_location_handler_exception.dart';
+import 'package:real_time_location/real_time_location.dart';
 
 /// The Device location manager.
 ///
 /// This class provides some methods which will help you to use the device location.
 class DeviceLocationHandlerImp implements DeviceLocationHandler {
+  factory DeviceLocationHandlerImp() => _singleton;
+
+  DeviceLocationHandlerImp._internal() : _location = Location();
+
+  DeviceLocationHandlerImp.forTest({required Location location})
+      : _location = location;
   Location _location;
   bool _locationServiceInitialized = false;
 
   static final _singleton = DeviceLocationHandlerImp._internal();
 
-  factory DeviceLocationHandlerImp() => _singleton;
-
-  DeviceLocationHandlerImp._internal() : _location = Location();
-
-  DeviceLocationHandlerImp.forTest({Location location}) : _location = location;
-
   // TODO: check if the device os version is android 11+ to decide weither to
   // todo: explan to the user how to always allow location permission or not.
 
+  @override
   Future<void> initialize({bool requireBackground = false}) async {
     await _location.enableBackgroundMode(enable: requireBackground);
     await _requireLocationPermission();
     if (!(await _location.serviceEnabled()) &&
         !(await _location.requestService())) {
-      throw DeviceLocationHandlerException.locationServiceDisabled();
+      throw const DeviceLocationHandlerException.locationServiceDisabled();
     }
     _locationServiceInitialized = true;
   }
@@ -35,7 +34,8 @@ class DeviceLocationHandlerImp implements DeviceLocationHandler {
     final locationPermissionStatus = await _location.hasPermission();
     if (locationPermissionStatus != PermissionStatus.granted) {
       if (locationPermissionStatus == PermissionStatus.deniedForever) {
-        throw DeviceLocationHandlerException.permissionPermanentlyDenied();
+        throw const DeviceLocationHandlerException
+            .permissionPermanentlyDenied();
       }
       await _requestLocationPermission();
     }
@@ -44,31 +44,57 @@ class DeviceLocationHandlerImp implements DeviceLocationHandler {
   Future<void> _requestLocationPermission() async {
     switch (await _location.requestPermission()) {
       case PermissionStatus.denied:
-        throw DeviceLocationHandlerException.permissionDenied();
+        throw const DeviceLocationHandlerException.permissionDenied();
       case PermissionStatus.deniedForever:
-        throw DeviceLocationHandlerException.permissionPermanentlyDenied();
+        throw const DeviceLocationHandlerException
+            .permissionPermanentlyDenied();
       default:
     }
   }
 
   @override
   Future<Coordinates> getCurrentCoordinates() async {
-    if (!_locationServiceInitialized)
-      throw DeviceLocationHandlerException.locationServiceUninitialized();
+    if (!_locationServiceInitialized) {
+      throw const DeviceLocationHandlerException.locationServiceUninitialized();
+    }
     final locationData = await _location.getLocation();
-    return Coordinates(
-        latitude: locationData.latitude, longitude: locationData.longitude);
+    if (locationData
+        case LocationData(
+          :final double latitude,
+          :final double longitude,
+        )) {
+      return Coordinates(
+        latitude: latitude,
+        longitude: longitude,
+      );
+    } else {
+      throw const DeviceLocationHandlerException.locationServiceDisabled();
+    }
   }
 
   @override
-  Stream<Coordinates> getCoordinatesStream(
-      {double distanceFilterInMeter = 100}) {
-    if (!_locationServiceInitialized)
-      throw DeviceLocationHandlerException.locationServiceUninitialized();
+  Stream<Coordinates> getCoordinatesStream({
+    double distanceFilterInMeter = 100,
+  }) {
+    if (!_locationServiceInitialized) {
+      throw const DeviceLocationHandlerException.locationServiceUninitialized();
+    }
     _location.changeSettings(distanceFilter: distanceFilterInMeter);
     return _location.onLocationChanged.map<Coordinates>(
-      (locationData) => Coordinates(
-          latitude: locationData.latitude, longitude: locationData.longitude),
+      (locationData) {
+        if (locationData
+            case LocationData(
+              :final double latitude,
+              :final double longitude,
+            )) {
+          return Coordinates(
+            latitude: latitude,
+            longitude: longitude,
+          );
+        } else {
+          throw const DeviceLocationHandlerException.locationServiceDisabled();
+        }
+      },
     );
   }
 

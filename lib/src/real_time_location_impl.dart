@@ -1,31 +1,15 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-import 'device_location_handler_impl.dart';
-import 'exceptions/real_time_location_exception.dart';
-import 'repositories/location_repository.dart';
-import 'repositories/location_streamer.dart';
-
-import '../real_time_location.dart';
-import 'exceptions/repositories/location_repository_exception.dart';
-import 'utils/reverse_geocoder.dart';
+import 'package:real_time_location/real_time_location.dart';
+import 'package:real_time_location/src/device_location_handler_impl.dart';
+import 'package:real_time_location/src/repositories/location_repository.dart';
+import 'package:real_time_location/src/repositories/location_streamer.dart';
+import 'package:real_time_location/src/utils/reverse_geocoder.dart';
 
 //TODO handle error (convert all exception message to user friendly)
 //TODO handle LocationRepository errors
 
 class RealTimeLocationImpl implements RealTimeLocation {
-  final LocationStreamer _locationStreamer;
-  final DeviceLocationHandler _deviceLocationHandler;
-  final LocationRepository _locationRepository;
-  StreamSubscription _locationStreamSubscription;
-  String _currentUserId;
-  String _city;
-  double _defaultDistanceFilter;
-  var _isRideMode = false;
-  var _initialized = false;
-
-  static final _singleton = RealTimeLocationImpl._internal();
-
   factory RealTimeLocationImpl() => _singleton;
 
   RealTimeLocationImpl._internal()
@@ -34,12 +18,24 @@ class RealTimeLocationImpl implements RealTimeLocation {
         _locationRepository = LocationRepository();
 
   RealTimeLocationImpl.forTest({
-    @required LocationStreamer locationStreamer,
-    @required DeviceLocationHandler deviceLocationHandler,
-    @required LocationRepository locationRepository,
+    required LocationStreamer locationStreamer,
+    required DeviceLocationHandler deviceLocationHandler,
+    required LocationRepository locationRepository,
   })  : _locationStreamer = locationStreamer,
         _deviceLocationHandler = deviceLocationHandler,
         _locationRepository = locationRepository;
+
+  final LocationStreamer _locationStreamer;
+  final DeviceLocationHandler _deviceLocationHandler;
+  final LocationRepository _locationRepository;
+  StreamSubscription? _locationStreamSubscription;
+  String? _currentUserId;
+  String? _city;
+  double? _defaultDistanceFilter;
+  var _isRideMode = false;
+  var _initialized = false;
+
+  static final _singleton = RealTimeLocationImpl._internal();
 
   @override
   bool get isRideMode => _isRideMode;
@@ -49,24 +45,25 @@ class RealTimeLocationImpl implements RealTimeLocation {
 
   @override
   Future<void> initialize({
-    @required String currentUserId,
+    required String currentUserId,
     bool isDriverApp = true,
-    ReverseGeocoder reverseGeocoder,
+    ReverseGeocoder? reverseGeocoder,
   }) async {
     _currentUserId = currentUserId;
     if (_initialized) return;
-    reverseGeocoder ??= new ReverseGeocoder();
+    reverseGeocoder ??= ReverseGeocoder();
     await _deviceLocationHandler.initialize(requireBackground: isDriverApp);
     final currentCoordinates =
         await _deviceLocationHandler.getCurrentCoordinates();
     _city = await reverseGeocoder
         .getCityFromCoordinates(currentCoordinates)
         .catchError(
-            (_) => throw RealTimeLocationException.initializationFailed());
+          (_) => throw const RealTimeLocationException.initializationFailed(),
+        );
     if (isDriverApp) {
       await _locationStreamer.removeOnDisconnect(
-        city: _city,
-        userId: _currentUserId,
+        city: _city!,
+        userId: _currentUserId!,
       );
     }
     _initialized = true;
@@ -78,9 +75,12 @@ class RealTimeLocationImpl implements RealTimeLocation {
     //* a closest driver, so we delete the location from the repository.
     //* The location will be automaticlly set by the location stream in the
     //* [startSharingLocation] function when the ride mode is disabled.
+    if (_city == null || _currentUserId == null) {
+      throw const RealTimeLocationException.initializationFailed();
+    }
     await _locationRepository.deleteLocation(
-      city: _city,
-      userId: _currentUserId,
+      city: _city!,
+      userId: _currentUserId!,
     );
     await _deviceLocationHandler.setDistanceFilter(newDistanceFilter);
     _isRideMode = true;
@@ -88,20 +88,37 @@ class RealTimeLocationImpl implements RealTimeLocation {
 
   @override
   void disableRideMode() {
-    _deviceLocationHandler.setDistanceFilter(_defaultDistanceFilter);
+    if (_defaultDistanceFilter == null) {
+      throw const RealTimeLocationException.initializationFailed();
+    }
+    _deviceLocationHandler.setDistanceFilter(_defaultDistanceFilter!);
     _isRideMode = false;
   }
 
   @override
   Stream<Coordinates> startLocationTracking(String idOfUserToTrack) {
+    if (_city == null) {
+      throw const RealTimeLocationException.initializationFailed();
+    }
     return _locationStreamer
-        .getLocationStream(city: _city, userUid: idOfUserToTrack)
+        .getLocationStream(city: _city!, userUid: idOfUserToTrack)
         .map(
-          (coordinatesMap) => Coordinates(
-            latitude: coordinatesMap['latitude'],
-            longitude: coordinatesMap['longitude'],
-          ),
-        );
+      (coordinatesMap) {
+        // if any of the coordinate maps doesn't have either latitude or
+        // longitude, we don't want to add it to the stream.
+        if (coordinatesMap
+            case {
+              'latitude': final double latitude,
+              'longitude': final double longitude,
+            }) {
+          return Coordinates(
+            latitude: latitude,
+            longitude: longitude,
+          );
+        }
+        throw const RealTimeLocationException.unknown();
+      },
+    );
   }
 
   @override
@@ -113,22 +130,33 @@ class RealTimeLocationImpl implements RealTimeLocation {
   }
 
   void _shareLocation(Coordinates coordinates) {
+    if (_city == null || _currentUserId == null) {
+      throw const RealTimeLocationException.initializationFailed();
+    }
     if (isRideMode) {
       _locationStreamer.updateLocation(
-        city: _city,
-        userUid: _currentUserId,
+        city: _city!,
+        userUid: _currentUserId!,
         gpsCoordinates: coordinates.toMap(),
       );
-    } else
+    } else {
       _locationRepository.putLocation(
-          city: _city, userId: _currentUserId, coordinates: coordinates);
+        city: _city!,
+        userId: _currentUserId!,
+        coordinates: coordinates,
+      );
+    }
   }
 
+  @override
   Future<void> stopLocationSharing() async {
+    if (_city == null || _currentUserId == null) {
+      throw const RealTimeLocationException.realTimeLocationUninitialized();
+    }
     await _locationStreamSubscription?.cancel();
     await _locationRepository.deleteLocation(
-      city: _city,
-      userId: _currentUserId,
+      city: _city!,
+      userId: _currentUserId!,
     );
   }
 
@@ -138,18 +166,22 @@ class RealTimeLocationImpl implements RealTimeLocation {
     int locationCount = 4,
   }) async {
     try {
+      if (_city == null) {
+        throw const RealTimeLocationException.initializationFailed();
+      }
       final coordinates = await _deviceLocationHandler.getCurrentCoordinates();
       return _locationRepository.getClosestLocation(
-        city: _city,
+        city: _city!,
         coordinates: coordinates,
         maxDistanceInKm: maxDistanceInKm,
         locationCount: locationCount,
       );
     } on LocationRepositoryException catch (e) {
       if (e.exceptionType == LocationRepositoryExceptionType.notFound) {
-        throw RealTimeLocationException.closestLocationNotFound();
-      } else
-        throw RealTimeLocationException.unknown();
+        throw const RealTimeLocationException.closestLocationNotFound();
+      } else {
+        throw const RealTimeLocationException.unknown();
+      }
     }
   }
 }

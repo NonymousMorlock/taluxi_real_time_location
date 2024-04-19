@@ -1,28 +1,28 @@
-import '../base_exception.dart';
+import 'package:real_time_location/src/exceptions/base_exception.dart';
 
 class LocationRepositoryException
     extends BaseException<LocationRepositoryExceptionType> {
-  LocationRepositoryException.notFound()
+  const LocationRepositoryException.notFound()
       : super(
           exceptionType: LocationRepositoryExceptionType.notFound,
-          message: "Location not found",
+          message: 'Location not found',
         );
-  LocationRepositoryException.serverError()
+  const LocationRepositoryException.serverError()
       : super(
           exceptionType: LocationRepositoryExceptionType.serverError,
-          message: "Server internal error",
+          message: 'Server internal error',
         );
 
-  LocationRepositoryException.unknown()
+  const LocationRepositoryException.unknown()
       : super(
           exceptionType: LocationRepositoryExceptionType.unknown,
-          message: "Unknown exception reason",
+          message: 'Unknown exception reason',
         );
 
-  LocationRepositoryException.requestTimeout()
+  const LocationRepositoryException.requestTimeout()
       : super(
           exceptionType: LocationRepositoryExceptionType.requestTimeout,
-          message: "Request timeout",
+          message: 'Request timeout',
         );
 
   // LocationRepositoryException.failedToPutLocation()
