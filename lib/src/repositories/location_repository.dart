@@ -7,7 +7,7 @@ class LocationRepository {
   LocationRepository() {
     // _httpClient.options.baseUrl = 'https://taluxi-360b0.uc.r.appspot-review'
     //     '.com';
-    _httpClient.options.baseUrl = 'http://localhost:3000';
+    _httpClient.options.baseUrl = 'http://127.0.0.1:3000';
     _httpClient.options.responseType = ResponseType.json;
   }
   final _httpClient = Dio();
