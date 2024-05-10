@@ -5,7 +5,9 @@ import 'package:real_time_location/real_time_location.dart';
 // TODO(Error-handling): handle errors
 class LocationRepository {
   LocationRepository() {
-    _httpClient.options.baseUrl = 'https://taluxi-360b0.uc.r.appspot.com';
+    // _httpClient.options.baseUrl = 'https://taluxi-360b0.uc.r.appspot-review'
+    //     '.com';
+    _httpClient.options.baseUrl = 'http://localhost:3000';
     _httpClient.options.responseType = ResponseType.json;
   }
   final _httpClient = Dio();
