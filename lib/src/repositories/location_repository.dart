@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-
 import 'package:real_time_location/real_time_location.dart';
 
 // TODO(Error-handling): handle errors
@@ -10,6 +9,7 @@ class LocationRepository {
     _httpClient.options.baseUrl = 'http://192.168.8.2:3000';
     _httpClient.options.responseType = ResponseType.json;
   }
+
   final _httpClient = Dio();
 
   Future<void> putLocation({
@@ -50,6 +50,14 @@ class LocationRepository {
       );
       return response.data ?? {};
     } on DioException catch (e) {
+      if(e.response?.statusCode == 404) {
+        return {
+          'fake-id': {
+            'lat': 51.509865,
+            'lon': -0.118092,
+          },
+        };
+      }
       throw _handleRequestErrors(e);
     }
   }
