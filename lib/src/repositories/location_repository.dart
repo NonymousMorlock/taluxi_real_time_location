@@ -51,14 +51,21 @@ class LocationRepository {
       return response.data ?? {};
     } on DioException catch (e) {
       if(e.response?.statusCode == 404) {
+        final uids = List.generate(2, (index) {
+          return String.fromCharCodes(List.generate(10, (index) => index + 48));
+        });
         return {
           '1': {
-            'lat': 51.518852,
-            'lon': -0.078510,
+            uids[0]: {
+              'lat': 51.518852,
+              'lon': -0.078510,
+            },
           },
           '2': {
-            'lat': 51.515567,
-            'lon': -0.075635,
+            uids[1]: {
+              'lat': 51.515567,
+              'lon': -0.075635,
+            },
           },
         };
       }
