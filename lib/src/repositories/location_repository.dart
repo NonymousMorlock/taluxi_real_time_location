@@ -52,11 +52,11 @@ class LocationRepository {
     } on DioException catch (e) {
       if(e.response?.statusCode == 404) {
         return {
-          'fake-id-1': {
+          '1': {
             'lat': 51.518852,
             'lon': -0.078510,
           },
-          'fake-id-2': {
+          '2': {
             'lat': 51.515567,
             'lon': -0.075635,
           },
