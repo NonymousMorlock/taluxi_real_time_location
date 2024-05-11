@@ -18,7 +18,7 @@ class LocationRepository {
     required Coordinates coordinates,
   }) async {
     try {
-      final result = await _httpClient.post(
+      await _httpClient.post(
         '/add',
         data: {
           'id': userId,
